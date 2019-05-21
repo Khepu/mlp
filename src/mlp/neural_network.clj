@@ -3,6 +3,7 @@
                                     transpose]]
         [mlp.activators]
         :reload-all))
+(def t transpose)
 
 (defn rand-v
   "Returns a vector of size n with random values in range [0, 1] (lazy)"
@@ -87,6 +88,11 @@
            :activation (get-activation result)
            :sigma-prime (get-sigma-prime result))))
 
+(defn delta
+  [next-delta w sigma]
+  (haddamard-product (mmul next-delta w)
+                     sigma))
+
 (defn back-propagation
     "Calculates all the deltas required for adjusting the weights of the network"
   [network]
@@ -96,10 +102,9 @@
         columns (count (last alpha))
         sigma (:sigma-prime network)
         delta-out (haddamard-product (mapv - (last alpha) t) (vector (last sigma)))
-        delta (reduce (fn [prev-delta prev-w cur-sigma]
-                    (haddamard-product (mmul (transpose w) prev-delta)
-                                       cur-sigma))
-                    (reversev (butlast w)) (butlast sigma))]
+        w-sigma (map #([[%1] [%2]]) (reversev (butlast w)) (reversev (butlast sigma)))
+        delta (reduce delta
+                    (reversev (butlast w)) (reversev (butlast sigma)))]
     (assoc network :delta delta-out)))
 
 (defn mean-squared-error
