@@ -4,6 +4,7 @@
         [mlp.activators]
         :reload-all))
 (def t transpose)
+(def m mmul)
 
 (defn rand-v
   "Returns a vector of size n with random values in range [0, 1] (lazy)"
@@ -88,24 +89,31 @@
            :activation (get-activation result)
            :sigma-prime (get-sigma-prime result))))
 
-(defn delta
+(defn delta-calc
   [next-delta w sigma]
-  (haddamard-product (mmul next-delta w)
-                     sigma))
+  (haddamard-product (mmul next-delta w) sigma))
 
 (defn back-propagation
-    "Calculates all the deltas required for adjusting the weights of the network"
   [network]
-  (let [alpha (:activation network)
-        w (:weights network)
-        t (:target network)
-        columns (count (last alpha))
-        sigma (:sigma-prime network)
-        delta-out (haddamard-product (mapv - (last alpha) t) (vector (last sigma)))
-        w-sigma (map #([[%1] [%2]]) (reversev (butlast w)) (reversev (butlast sigma)))
-        delta (reduce delta
-                    (reversev (butlast w)) (reversev (butlast sigma)))]
-    (assoc network :delta delta-out)))
+  (let [activation (:activation network)
+        weights (:weights network)
+        target (:target network)
+        columns (count (last activation))
+        sigma-primed (:sigma-prime network)
+        delta-out (haddamard-product (mapv - (last activation) target) (vector (last sigma-primed)))]
+    (loop [w (reverse weights)
+           sigma (reverse (butlast sigma-primed))
+           alpha (reverse activation)
+           delta (list delta-out)]
+      (if (empty? sigma)
+        delta
+        (recur (rest w)
+               (rest sigma)
+               (rest alpha)
+               (conj delta (delta-calc (first delta) (first w) (first sigma))))))))
+
+(defn update-weights
+  [network])
 
 (defn mean-squared-error
   "y is the guessed output from the network and t the actual target"

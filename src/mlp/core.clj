@@ -19,13 +19,13 @@
 
   (let [[x t-str] (read-dataset "./resources/iris.data")
         t (mapv (dict 1) t-str)]
-     (-> {:neurons [2 1]
-          :activators [sigmoid sigmoid]
+     (-> {:neurons [3 2 1]
+          :activators [sigmoid sigmoid sigmoid]
           :x (first x)
           :target (vector (first t))
           :learning-rate 1}
          neural-net
          feed-forward
-                                        ;back-propagation
+         back-propagation
          )))
 
